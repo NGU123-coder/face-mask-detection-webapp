@@ -1,0 +1,4 @@
+dl_env/
+__pycache__/
+*.pyc
+static/uploads/

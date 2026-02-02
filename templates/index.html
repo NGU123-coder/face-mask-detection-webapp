@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Mask Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .mask {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .no-mask {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .uncertain {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        img {
+            margin-top: 15px;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        footer {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h1>😷 Face Mask Detection</h1>
+    <p>Upload a face image to check mask status</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" required>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if result %}
+        <div class="result 
+            {% if 'Mask' in result and 'No' not in result %}mask
+            {% elif 'No Mask' in result %}no-mask
+            {% else %}uncertain{% endif %}">
+            {{ result }}
+        </div>
+    {% endif %}
+
+    {% if image %}
+        <img src="{{ image }}">
+    {% endif %}
+
+    <footer>
+        Powered by CNN + Flask
+    </footer>
+</div>
+
+</body>
+</html>
