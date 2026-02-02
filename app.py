@@ -4,15 +4,26 @@ import numpy as np
 import cv2
 import os
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 app = Flask(__name__)
 UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # Load model
-model = tf.keras.models.load_model("mask_model.h5")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "mask_model.h5")
+
+model = tf.keras.models.load_model(MODEL_PATH)
+
 def predict_mask(image_path):
     img = cv2.imread(image_path)
+    if img is None:
+        return "Invalid image"
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
 
     face_cascade = cv2.CascadeClassifier(
         cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
@@ -56,4 +67,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
+ 
