@@ -5,41 +5,38 @@ import cv2
 import os
 from werkzeug.utils import secure_filename
 
-# Force CPU (Render has no GPU)
+# Force CPU only (Render has no GPU)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 app = Flask(__name__)
 
-# Upload config
 UPLOAD_FOLDER = "static/uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Ensure upload dir always exists (VERY IMPORTANT)
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Load model safely
+# Absolute paths (important for Render)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_PATH = os.path.join(BASE_DIR, UPLOAD_FOLDER)
 MODEL_PATH = os.path.join(BASE_DIR, "mask_model.h5")
-model = tf.keras.models.load_model(MODEL_PATH)
 
-# Haar cascade (load once)
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
+# Load model once
+model = tf.keras.models.load_model(MODEL_PATH)
 
 def predict_mask(image_path):
     img = cv2.imread(image_path)
-
     if img is None:
-        return "Invalid image ❌"
+        return "Invalid Image ❌"
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    face_cascade = cv2.CascadeClassifier(
+        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    )
+
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
     if len(faces) == 0:
         return "No Face Detected ❌"
 
-    # Use first detected face
     x, y, w, h = faces[0]
     face = img[y:y+h, x:x+w]
 
@@ -59,34 +56,30 @@ def predict_mask(image_path):
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = ""
-    image_path = ""
+    image_url = ""
 
     if request.method == "POST":
         if "image" not in request.files:
-            return render_template("index.html", result="No file selected ❌")
+            return render_template("index.html", result="No file uploaded ❌")
 
         file = request.files["image"]
 
         if file.filename == "":
             return render_template("index.html", result="No file selected ❌")
 
-        # Secure filename (VERY IMPORTANT)
+        # 🔥 CRITICAL FIX: Always recreate folder
+        os.makedirs(UPLOAD_PATH, exist_ok=True)
+
         filename = secure_filename(file.filename)
+        image_path = os.path.join(UPLOAD_PATH, filename)
 
-        # Ensure folder exists again (Render safety)
-        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+        file.save(image_path)
 
-        image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        result = predict_mask(image_path)
+        image_url = f"{UPLOAD_FOLDER}/{filename}"
 
-        try:
-            file.save(image_path)
-            result = predict_mask(image_path)
-        except Exception as e:
-            print("ERROR:", e)
-            result = "Error processing image ❌"
+    return render_template("index.html", result=result, image=image_url)
 
-    return render_template("index.html", result=result, image=image_path)
-
-# Local run only (Render uses gunicorn)
+# Local testing only
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
